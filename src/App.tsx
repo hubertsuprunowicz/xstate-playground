@@ -1,10 +1,38 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react";
+import reactLogo from "./assets/react.svg";
+import viteLogo from "/vite.svg";
+import "./App.css";
+import { createMachine, assign } from "xstate";
+import { useMachine } from "@xstate/react";
+
+interface ToggleContext {
+  count: number;
+}
+
+type ToggleEvents = { type: "TOGGLE" };
+
+const toggleMachine = createMachine<ToggleContext, ToggleEvents>({
+  id: "toggle",
+  initial: "inactive",
+  context: {
+    count: 0,
+  },
+  states: {
+    inactive: {
+      on: { TOGGLE: "active" },
+    },
+    active: {
+      entry: assign({ count: (ctx) => ctx.count + 1 }),
+      on: { TOGGLE: "inactive" },
+    },
+  },
+  predictableActionArguments: true,
+});
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [current, send] = useMachine(toggleMachine);
+  const active = current.matches("active");
+  const { count } = current.context;
 
   return (
     <>
@@ -18,18 +46,13 @@ function App() {
       </div>
       <h1>Vite + React</h1>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
+        <button onClick={() => send({ type: "TOGGLE" })}>
           count is {count}
+          Click me ({active ? "✅" : "❌"})
         </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
